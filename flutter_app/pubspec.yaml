@@ -1,0 +1,51 @@
+name: dismounted_associate
+description: RDF Dismounted Commander's Associate — Tactical Situational Awareness
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # HTTP & WebSocket
+  http: ^1.2.1
+  web_socket_channel: ^3.0.1
+
+  # On-device ML inference
+  tflite_flutter: ^0.11.0
+
+  # Location & sensors
+  geolocator: ^12.0.0
+  sensors_plus: ^5.0.1
+
+  # Map
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.0
+
+  # State management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # UI helpers
+  cupertino_icons: ^1.0.6
+  google_fonts: ^6.2.1
+  fl_chart: ^0.68.0
+  flutter_spinkit: ^5.2.1
+  badges: ^3.1.2
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.9
+  riverpod_generator: ^2.4.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/models/
+    - assets/icons/

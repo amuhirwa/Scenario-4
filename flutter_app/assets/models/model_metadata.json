@@ -1,0 +1,46 @@
+{
+  "model_path": "tactical_lstm_quantised.tflite",
+  "n_timesteps": 128,
+  "n_channels": 9,
+  "label_classes": [
+    "KNEELING_READY",
+    "PRONE_STILL",
+    "WALKING"
+  ],
+  "channel_names": [
+    "body_acc_x",
+    "body_acc_y",
+    "body_acc_z",
+    "body_gyro_x",
+    "body_gyro_y",
+    "body_gyro_z",
+    "total_acc_x",
+    "total_acc_y",
+    "total_acc_z"
+  ],
+  "raw_mean": [
+    -0.0006363030578579545,
+    -0.00029229685563157725,
+    -0.00027529941238950076,
+    0.0005064646739168356,
+    -0.0008237808313409084,
+    0.00011294843854608613,
+    0.804749279430589,
+    0.02875548648539289,
+    0.08649801627117916
+  ],
+  "raw_std": [
+    0.19484634958319197,
+    0.12242749123373693,
+    0.10687881598104465,
+    0.4068150747999067,
+    0.38185432858276014,
+    0.2557431491491414,
+    0.41411195601092765,
+    0.39099543605124115,
+    0.35776881729366544
+  ],
+  "sampling_rate_hz": 50,
+  "window_size_samples": 128,
+  "window_overlap": 0.5
+}

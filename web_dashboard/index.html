@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Commander's Associate — RDF Dismounted Dashboard</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Leaflet -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- ── Header ──────────────────────────────────────────────────────────────── -->
+    <header>
+      <div>
+        <div class="logo">⚔ COMMANDER'S ASSOCIATE</div>
+        <div class="sub">
+          DISMOUNTED SITUATIONAL AWARENESS · RDF R&amp;D PROTOTYPE v0.1
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <div id="soldier-count">0 SOLDIERS TRACKED</div>
+      <div id="conn-status" class="status-pill connecting">
+        <div class="dot"></div>
+        <span class="conn-text">CONNECTING…</span>
+      </div>
+    </header>
+
+    <!-- ── Main ────────────────────────────────────────────────────────────────── -->
+    <main>
+      <!-- ── Map pane ─────────────────────────────────────────────────────────── -->
+      <div id="map">
+        <!-- Legend overlay (populated by JS) -->
+        <div id="legend"></div>
+      </div>
+
+      <!-- ── Sidebar ──────────────────────────────────────────────────────────── -->
+      <aside id="sidebar">
+        <!-- Alerts section -->
+        <div id="alerts-section">
+          <div class="sidebar-header">⚠️&nbsp;&nbsp;ACTIVE ALERTS</div>
+          <div id="alerts-container">
+            <div id="no-alerts">No active alerts</div>
+          </div>
+        </div>
+
+        <!-- Force list section -->
+        <div id="force-list-section">
+          <div class="sidebar-header">🪖&nbsp;&nbsp;FORCE PICTURE</div>
+          <div id="soldier-list">
+            <div
+              style="
+                padding: 20px;
+                text-align: center;
+                color: #8b949e;
+                font-size: 0.78rem;
+              "
+            >
+              Waiting for soldier data…
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
