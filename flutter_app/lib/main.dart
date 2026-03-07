@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'screens/role_select_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +26,7 @@ class DismountedAssociateApp extends StatelessWidget {
         useMaterial3: true,
         textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
       ),
-      home: const RoleSelectScreen(),
+      home: const LoginScreen(),
     );
   }
 }

@@ -3,8 +3,26 @@ Pydantic data models for the Dismounted Commander's Associate backend.
 """
 from __future__ import annotations
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, Literal
 from datetime import datetime
+
+
+# ─── Auth ─────────────────────────────────────────────────────────────────────
+
+class UserLogin(BaseModel):
+    email:    str
+    password: str
+
+class AuthResponse(BaseModel):
+    role:       Literal["commander", "soldier"]
+    name:       str
+    unit:       str
+    soldier_id: Optional[str] = None
+    call_sign:  Optional[str] = None
+
+# Keep aliases so any Flutter/web code using the old names still imports cleanly
+LoginRequest  = UserLogin
+LoginResponse = AuthResponse
 
 
 # ─── Incoming from soldier device ────────────────────────────────────────────
@@ -66,3 +84,18 @@ class SoldierRegistration(BaseModel):
     soldier_id:  str
     call_sign:   str
     unit:        str
+
+
+# ─── Authentication ───────────────────────────────────────────────────────────
+
+class UserLogin(BaseModel):
+    email:    str
+    password: str
+
+
+class AuthResponse(BaseModel):
+    role:       str              # "soldier" | "commander"
+    name:       str
+    unit:       str
+    soldier_id: Optional[str] = None   # populated for soldiers only
+    call_sign:  Optional[str] = None   # populated for soldiers only

@@ -47,6 +47,18 @@
         </div>
         <div class="spacer"></div>
         <div id="soldier-count">0 ACTIVE</div>
+        <div id="user-badge" style="display: none">
+          <i class="fa-solid fa-user-shield"></i>
+          <span id="user-name"></span>
+        </div>
+        <button
+          id="logout-btn"
+          class="logout-btn"
+          style="display: none"
+          onclick="doLogout()"
+        >
+          <i class="fa-solid fa-right-from-bracket"></i> SIGN OUT
+        </button>
         <div id="conn-status" class="status-pill connecting">
           <div class="dot"></div>
           <span class="conn-text">UPLINK ESTABLISHING…</span>
@@ -86,5 +98,75 @@
     </div>
 
     <script src="app.js"></script>
+
+    <!-- ── Login overlay ──────────────────────────────────────────────────── -->
+    <div id="login-overlay">
+      <div class="login-card">
+        <div class="login-logo">
+          <i class="fa-solid fa-satellite-dish"></i>
+        </div>
+        <h1 class="login-title">COMMANDER'S ASSOCIATE</h1>
+        <p class="login-sub">RDF TACTICAL AWARENESS · PROTOTYPE v2.0</p>
+
+        <form id="login-form" onsubmit="handleLogin(event)">
+          <div class="login-field">
+            <label for="login-email">EMAIL</label>
+            <div class="login-input-wrap">
+              <i class="fa-solid fa-at"></i>
+              <input
+                id="login-email"
+                type="email"
+                autocomplete="username"
+                placeholder="commander@rdf.mil"
+                required
+              />
+            </div>
+          </div>
+          <div class="login-field">
+            <label for="login-pass">PASSWORD</label>
+            <div class="login-input-wrap">
+              <i class="fa-solid fa-lock"></i>
+              <input
+                id="login-pass"
+                type="password"
+                autocomplete="current-password"
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                class="pass-toggle"
+                id="pass-toggle-btn"
+                onclick="togglePassVis()"
+                tabindex="-1"
+              >
+                <i class="fa-solid fa-eye" id="pass-eye-icon"></i>
+              </button>
+            </div>
+          </div>
+
+          <div id="login-error" class="login-error" style="display: none"></div>
+
+          <button type="submit" class="login-submit" id="login-submit-btn">
+            <span id="login-btn-text">AUTHENTICATE</span>
+            <span id="login-btn-spinner" style="display: none">
+              <i class="fa-solid fa-circle-notch fa-spin"></i>
+            </span>
+          </button>
+        </form>
+
+        <div class="login-hints">
+          <div class="login-hint">
+            <i class="fa-solid fa-user-shield"></i>
+            <div>
+              <div class="hint-role">Commander</div>
+              <div class="hint-creds">
+                commander@rdf.mil &nbsp;·&nbsp; command3r!
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

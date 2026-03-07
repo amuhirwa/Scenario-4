@@ -5,6 +5,102 @@
 const BACKEND_WS = "ws://localhost:8000/ws/commander";
 const BACKEND_HTTP = "http://localhost:8000";
 
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+let currentUser = null; // set after login
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const emailEl = document.getElementById("login-email");
+  const passEl = document.getElementById("login-pass");
+  const errorEl = document.getElementById("login-error");
+  const submitBtn = document.getElementById("login-submit-btn");
+  const btnText = document.getElementById("login-btn-text");
+  const spinner = document.getElementById("login-btn-spinner");
+
+  errorEl.style.display = "none";
+  submitBtn.disabled = true;
+  btnText.style.display = "none";
+  spinner.style.display = "inline";
+
+  try {
+    const r = await fetch(`${BACKEND_HTTP}/api/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: emailEl.value.trim(),
+        password: passEl.value,
+      }),
+    });
+
+    const data = await r.json();
+
+    if (!r.ok) {
+      throw new Error(data.detail || "Invalid credentials.");
+    }
+    if (data.role !== "commander") {
+      throw new Error("Access denied. Commander accounts only.");
+    }
+
+    currentUser = data;
+    onLoginSuccess();
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.style.display = "block";
+    submitBtn.disabled = false;
+    btnText.style.display = "inline";
+    spinner.style.display = "none";
+  }
+}
+
+function onLoginSuccess() {
+  document.getElementById("login-overlay").classList.add("hidden");
+  // Show user badge and logout button in header
+  const badge = document.getElementById("user-badge");
+  badge.style.display = "flex";
+  document.getElementById("user-name").textContent = currentUser.name;
+  document.getElementById("logout-btn").style.display = "inline-flex";
+  // Boot the dashboard
+  fetchInitialState();
+  connectWS();
+  renderSoldierList();
+  renderAlerts();
+  updateCountBadge();
+}
+
+function doLogout() {
+  currentUser = null;
+  // Disconnect WS
+  if (ws) {
+    try {
+      ws.close();
+    } catch (_) {}
+    ws = null;
+  }
+  // Reset UI
+  soldiers = {};
+  markers = {};
+  renderSoldierList();
+  renderAlerts();
+  updateCountBadge();
+  document.getElementById("user-badge").style.display = "none";
+  document.getElementById("logout-btn").style.display = "none";
+  document.getElementById("login-overlay").classList.remove("hidden");
+  document.getElementById("login-email").value = "";
+  document.getElementById("login-pass").value = "";
+  document.getElementById("login-error").style.display = "none";
+  document.getElementById("conn-status").className = "status-pill connecting";
+  document.querySelector(".conn-text").textContent = "UPLINK ESTABLISHING…";
+  mapFitted = false;
+}
+
+function togglePassVis() {
+  const input = document.getElementById("login-pass");
+  const icon = document.getElementById("pass-eye-icon");
+  const show = input.type === "password";
+  input.type = show ? "text" : "password";
+  icon.className = show ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
+}
+
 // Northern Province, Rwanda (Musanze area)
 const DEFAULT_CENTRE = [-1.4993, 29.634];
 const DEFAULT_ZOOM = 14;
@@ -320,9 +416,7 @@ async function fetchInitialState() {
   }
 }
 
-// ─── Boot ─────────────────────────────────────────────────────────────────────
-fetchInitialState();
-connectWS();
+// ─── Boot — dashboard starts only after successful login (see handleLogin()) ──
 renderSoldierList();
 renderAlerts();
 updateCountBadge();

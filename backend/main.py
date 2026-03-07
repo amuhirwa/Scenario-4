@@ -25,11 +25,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from inference import classifier, PRONE_ALERT_WINDOWS
 from models import (
+    AuthResponse,
     ForceStatus,
     GpsCoordinate,
     SensorWindow,
     SoldierRegistration,
     TacticalState,
+    UserLogin,
     WsMessage,
 )
 
@@ -46,6 +48,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ─── Sample users (prototype — replace with DB + bcrypt in production) ────────
+# Two accounts bundled with the prototype:
+#   soldier@rdf.mil  /  soldier123     (role: soldier)
+#   commander@rdf.mil / command3r!    (role: commander)
+USERS: dict[str, dict] = {
+    "soldier@rdf.mil": {
+        "password":   "soldier123",
+        "role":       "soldier",
+        "name":       "Pte. K. Mutesa",
+        "unit":       "1 Platoon, A Coy",
+        "soldier_id": "S-001",
+        "call_sign":  "ALPHA-1",
+    },
+    "commander@rdf.mil": {
+        "password":   "command3r!",
+        "role":       "commander",
+        "name":       "OC BRAVO",
+        "unit":       "HQ Company",
+        "soldier_id": None,
+        "call_sign":  None,
+    },
+}
 
 # ─── In-memory state ──────────────────────────────────────────────────────────
 # In a real system this would be Redis / a time-series DB
@@ -94,6 +119,28 @@ def check_distress(soldier_id: str, activity: str) -> tuple[bool, Union[str, Non
 # ─────────────────────────────────────────────────────────────────────────────
 #  REST Endpoints
 # ─────────────────────────────────────────────────────────────────────────────
+
+@app.post("/api/auth/login", tags=["Auth"], response_model=AuthResponse)
+async def login(credentials: UserLogin):
+    """
+    Basic prototype authentication.  Returns role + identity on success.
+    IMPORTANT: plaintext passwords are intentional for this R&D prototype only.
+    Production deployments must use bcrypt + JWT.
+    """
+    user = USERS.get(credentials.email)
+    if not user or user["password"] != credentials.password:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+        )
+    return AuthResponse(
+        role       = user["role"],
+        name       = user["name"],
+        unit       = user["unit"],
+        soldier_id = user["soldier_id"],
+        call_sign  = user["call_sign"],
+    )
+
 
 @app.get("/", tags=["Health"])
 async def root():
