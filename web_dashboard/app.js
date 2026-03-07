@@ -2,8 +2,8 @@
 "use strict";
 
 // ─── Configuration ────────────────────────────────────────────────────────────
-const BACKEND_WS = "ws://localhost:8000/ws/commander";
-const BACKEND_HTTP = "http://localhost:8000";
+const BACKEND_WS = "ws://173.249.25.80:4000/ws/commander";
+const BACKEND_HTTP = "http://173.249.25.80:4000";
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 let currentUser = null; // set after login
