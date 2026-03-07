@@ -42,7 +42,7 @@ class _CommanderMapScreenState extends ConsumerState<CommanderMapScreen> {
             const Icon(Icons.radar, color: Color(0xFF4CAF50), size: 20),
             const SizedBox(width: 8),
             Text(
-              'COMMANDER MAP',
+              'MAP',
               style: GoogleFonts.inter(
                 fontSize: 14,
                 letterSpacing: 2,
