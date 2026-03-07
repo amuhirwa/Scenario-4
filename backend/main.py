@@ -121,7 +121,6 @@ async def soldier_report(window: SensorWindow):
         channels = [
             window.body_acc_x,  window.body_acc_y,  window.body_acc_z,
             window.body_gyro_x, window.body_gyro_y, window.body_gyro_z,
-            window.total_acc_x, window.total_acc_y, window.total_acc_z,
         ]
         result = classifier.predict(channels)
     except Exception as e:

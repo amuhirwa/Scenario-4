@@ -20,7 +20,8 @@ class SensorWindow(BaseModel):
     """
     One 128-sample window of raw IMU data from the soldier's tablet.
     Each channel list has exactly 128 float values.
-    Channels (9): body_acc_xyz, body_gyro_xyz, total_acc_xyz
+    Channels (6): body_acc_xyz, body_gyro_xyz
+    (total_acc dropped — model v0.2 uses 6 hardware-agnostic channels)
     """
     soldier_id: str
     timestamp:  datetime
@@ -32,9 +33,6 @@ class SensorWindow(BaseModel):
     body_gyro_x: list[float] = Field(..., min_length=128, max_length=128)
     body_gyro_y: list[float] = Field(..., min_length=128, max_length=128)
     body_gyro_z: list[float] = Field(..., min_length=128, max_length=128)
-    total_acc_x: list[float] = Field(..., min_length=128, max_length=128)
-    total_acc_y: list[float] = Field(..., min_length=128, max_length=128)
-    total_acc_z: list[float] = Field(..., min_length=128, max_length=128)
 
 
 # ─── Outgoing to commander ────────────────────────────────────────────────────
@@ -44,7 +42,7 @@ class TacticalState(BaseModel):
     soldier_id:     str
     timestamp:      datetime
     location:       GpsCoordinate
-    activity:       str          # WALKING | KNEELING_READY | PRONE_STILL | UNKNOWN
+    activity:       str          # WALKING | RUNNING | KNEELING_READY | PRONE_STILL | UNKNOWN
     confidence:     float
     all_probs:      dict[str, float]
     alert:          bool = False  # True when PRONE_STILL > ALERT_THRESHOLD seconds

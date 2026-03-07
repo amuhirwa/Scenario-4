@@ -6,12 +6,12 @@ import '../models/app_config.dart';
 
 typedef SampleCallback = void Function(List<double> sample);
 
-/// Collects 9-channel IMU samples at ~50 Hz and emits completed 128-sample
+/// Collects 6-channel IMU samples at ~50 Hz and emits completed 128-sample
 /// windows to the registered callback, with 50% overlap.
-/// Channel order: body_acc_xyz, body_gyro_xyz, total_acc_xyz
-/// (total_acc ≈ raw accelerometer before gravity removal on Android)
+/// Channel order: body_acc_xyz, body_gyro_xyz
+/// (model v0.2 — hardware-agnostic, no total_acc)
 class SensorService {
-  static const int _channels = 9;
+  static const int _channels = 6;
   static const int _winSize = AppConfig.windowSamples;
   static const int _step = AppConfig.stepSamples;
 
@@ -23,14 +23,12 @@ class SensorService {
     (_) => <double>[],
   );
 
-  StreamSubscription<AccelerometerEvent>? _accSub;
   StreamSubscription<UserAccelerometerEvent>? _bodyAccSub;
   StreamSubscription<GyroscopeEvent>? _gyroSub;
 
   // Latest raw values to assemble a synchronised sample
   List<double> _latestBodyAcc = [0, 0, 0];
   List<double> _latestGyro = [0, 0, 0];
-  List<double> _latestTotalAcc = [0, 0, 0];
 
   Timer? _sampleTimer;
 
@@ -49,13 +47,6 @@ class SensorService {
           _latestGyro = [e.x, e.y, e.z];
         });
 
-    _accSub =
-        accelerometerEventStream(
-          samplingPeriod: const Duration(microseconds: 20000),
-        ).listen((e) {
-          _latestTotalAcc = [e.x, e.y, e.z];
-        });
-
     // Sample timer fires at 50 Hz to create synchronised windows
     _sampleTimer = Timer.periodic(
       Duration(microseconds: (1000000 / AppConfig.samplingHz).round()),
@@ -65,9 +56,8 @@ class SensorService {
 
   void _pushSample() {
     final sample = [
-      ..._latestBodyAcc, // channels 0-2
-      ..._latestGyro, // channels 3-5
-      ..._latestTotalAcc, // channels 6-8
+      ..._latestBodyAcc, // channels 0-2  acc_xyz
+      ..._latestGyro,    // channels 3-5  gyro_xyz
     ];
 
     for (int c = 0; c < _channels; c++) {
@@ -94,7 +84,6 @@ class SensorService {
 
   void stop() {
     _sampleTimer?.cancel();
-    _accSub?.cancel();
     _bodyAccSub?.cancel();
     _gyroSub?.cancel();
   }

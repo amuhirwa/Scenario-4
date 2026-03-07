@@ -4,7 +4,7 @@
 class AppConfig {
   // Change this to your server IP / domain when running on device
   // static const String backendHost = '10.0.2.2'; // Android emulator → localhost
-  static const String backendHost = '192.168.0.105'; // Android emulator → localhost
+  static const String backendHost = '192.168.1.75'; // Android emulator → localhost
   static const int backendPort = 8000;
   static const String backendBase = 'http://$backendHost:$backendPort';
   static const String wsBase = 'ws://$backendHost:$backendPort';

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Commander's Associate — RDF Dismounted Dashboard</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Leaflet -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- FontAwesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Map pane now acts as full screen background -->
+    <div id="map"></div>
+
+    <!-- UI Overlay container -->
+    <div id="ui-overlay">
+      <!-- ── Header ──────────────────────────────────────────────────────────────── -->
+      <header>
+        <div class="header-left">
+          <div class="logo">
+            <i
+              class="fa-solid fa-crosshairs fa-spin-pulse"
+              style="--fa-animation-duration: 4s"
+            ></i>
+            COMMANDER'S ASSOCIATE
+          </div>
+          <div class="sub">
+            TACTICAL DISMOUNTED AWARENESS · OVERWATCH PROTOTYPE v2.0
+          </div>
+        </div>
+        <div class="spacer"></div>
+        <div id="soldier-count">0 ACTIVE</div>
+        <div id="conn-status" class="status-pill connecting">
+          <div class="dot"></div>
+          <span class="conn-text">UPLINK ESTABLISHING…</span>
+        </div>
+      </header>
+
+      <!-- ── Main Data Panel ─────────────────────────────────────────────────────── -->
+      <aside id="sidebar" class="glass-panel">
+        <!-- Alerts section -->
+        <div id="alerts-section">
+          <div class="sidebar-header">
+            <i class="fa-solid fa-triangle-exclamation pulse-alert"></i
+            >&nbsp;&nbsp;CRITICAL ALERTS
+          </div>
+          <div id="alerts-container">
+            <div id="no-alerts">No active alerts</div>
+          </div>
+        </div>
+
+        <!-- Force list section -->
+        <div id="force-list-section">
+          <div class="sidebar-header">
+            <i class="fa-solid fa-satellite-dish"></i>&nbsp;&nbsp;SQUAD
+            TELEMETRY
+          </div>
+          <div id="soldier-list">
+            <div class="empty-state">
+              <i class="fa-solid fa-spinner fa-spin"></i><br />
+              Awaiting telemetry data…
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Legend overlay -->
+      <div id="legend" class="glass-panel"></div>
+    </div>
+
+    <!-- Scanline effect overlay -->
+    <div class="scanlines"></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

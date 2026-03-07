@@ -42,8 +42,3 @@ android {
 flutter {
     source = "../.."
 }
-
-dependencies {
-    // TFLite Flex delegate — required for Bidirectional LSTM (SELECT_TF_OPS / TensorListReserve)
-    implementation("org.tensorflow:tensorflow-lite-select-tf-ops:2.16.1")
-}

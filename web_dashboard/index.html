@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
 
@@ -20,38 +20,47 @@
     />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+    <!-- FontAwesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <!-- ── Header ──────────────────────────────────────────────────────────────── -->
-    <header>
-      <div>
-        <div class="logo">⚔ COMMANDER'S ASSOCIATE</div>
-        <div class="sub">
-          DISMOUNTED SITUATIONAL AWARENESS · RDF R&amp;D PROTOTYPE v0.1
+    <!-- Map pane now acts as full screen background -->
+    <div id="map"></div>
+
+    <!-- UI Overlay container -->
+    <div id="ui-overlay">
+      <!-- ── Header ──────────────────────────────────────────────────────────────── -->
+      <header>
+        <div class="header-left">
+          <div class="logo">
+            <i class="fa-solid fa-satellite-dish"></i>
+            COMMANDER'S ASSOCIATE
+          </div>
+          <div class="sub">
+            TACTICAL DISMOUNTED AWARENESS · OVERWATCH PROTOTYPE v2.0
+          </div>
         </div>
-      </div>
-      <div class="spacer"></div>
-      <div id="soldier-count">0 SOLDIERS TRACKED</div>
-      <div id="conn-status" class="status-pill connecting">
-        <div class="dot"></div>
-        <span class="conn-text">CONNECTING…</span>
-      </div>
-    </header>
+        <div class="spacer"></div>
+        <div id="soldier-count">0 ACTIVE</div>
+        <div id="conn-status" class="status-pill connecting">
+          <div class="dot"></div>
+          <span class="conn-text">UPLINK ESTABLISHING…</span>
+        </div>
+      </header>
 
-    <!-- ── Main ────────────────────────────────────────────────────────────────── -->
-    <main>
-      <!-- ── Map pane ─────────────────────────────────────────────────────────── -->
-      <div id="map">
-        <!-- Legend overlay (populated by JS) -->
-        <div id="legend"></div>
-      </div>
-
-      <!-- ── Sidebar ──────────────────────────────────────────────────────────── -->
-      <aside id="sidebar">
+      <!-- ── Main Data Panel ─────────────────────────────────────────────────────── -->
+      <aside id="sidebar" class="glass-panel">
         <!-- Alerts section -->
         <div id="alerts-section">
-          <div class="sidebar-header">⚠️&nbsp;&nbsp;ACTIVE ALERTS</div>
+          <div class="sidebar-header">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            &nbsp;&nbsp;CRITICAL ALERTS
+          </div>
           <div id="alerts-container">
             <div id="no-alerts">No active alerts</div>
           </div>
@@ -59,22 +68,22 @@
 
         <!-- Force list section -->
         <div id="force-list-section">
-          <div class="sidebar-header">🪖&nbsp;&nbsp;FORCE PICTURE</div>
+          <div class="sidebar-header">
+            <i class="fa-solid fa-satellite-dish"></i>&nbsp;&nbsp;SQUAD
+            TELEMETRY
+          </div>
           <div id="soldier-list">
-            <div
-              style="
-                padding: 20px;
-                text-align: center;
-                color: #8b949e;
-                font-size: 0.78rem;
-              "
-            >
-              Waiting for soldier data…
+            <div class="empty-state">
+              <i class="fa-solid fa-spinner fa-spin"></i><br />
+              Awaiting telemetry data…
             </div>
           </div>
         </div>
       </aside>
-    </main>
+
+      <!-- Legend overlay -->
+      <div id="legend" class="glass-panel"></div>
+    </div>
 
     <script src="app.js"></script>
   </body>

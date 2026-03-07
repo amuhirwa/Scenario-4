@@ -61,20 +61,20 @@ class TacticalClassifier:
         _loaded_sm = tf.saved_model.load(SAVED_MODEL_DIR)
         self._infer = _loaded_sm.serve   # concrete function — version-agnostic
         # Warm-up pass so first real request isn't slow
-        _dummy = tf.constant(np.zeros((1, self.win_size, 9), dtype=np.float32))
+        _dummy = tf.constant(np.zeros((1, self.win_size, 6), dtype=np.float32))
         self._infer(_dummy)
         self._loaded = True
         print(f"[Inference] SavedModel loaded — labels: {self.labels}")
 
     def predict(self, sensor_channels: list[list[float]]) -> dict:
         """
-        sensor_channels: list of 9 lists, each with 128 float values.
-        Order: body_acc_xyz, body_gyro_xyz, total_acc_xyz
+        sensor_channels: list of 6 lists, each with 128 float values.
+        Order: body_acc_xyz, body_gyro_xyz
         Returns: {'activity': str, 'confidence': float, 'all_probs': dict}
         """
-        window = np.array(sensor_channels, dtype=np.float32).T   # (128, 9)
+        window = np.array(sensor_channels, dtype=np.float32).T   # (128, 6)
         window = (window - self.raw_mean[0]) / self.raw_std[0]
-        inp    = window[np.newaxis, :, :]                         # (1, 128, 9)
+        inp    = window[np.newaxis, :, :]                         # (1, 128, 6)
 
         probs    = self._infer(tf.constant(inp)).numpy()[0]          # (n_classes,)
         pred_idx = int(np.argmax(probs))
