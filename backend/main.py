@@ -50,9 +50,8 @@ app.add_middleware(
 )
 
 # ─── Sample users (prototype — replace with DB + bcrypt in production) ────────
-# Two accounts bundled with the prototype:
-#   soldier@rdf.mil  /  soldier123     (role: soldier)
-#   commander@rdf.mil / command3r!    (role: commander)
+# Soldier accounts: soldier123
+# Commander account: command3r!
 USERS: dict[str, dict] = {
     "soldier@rdf.mil": {
         "password":   "soldier123",
@@ -61,6 +60,30 @@ USERS: dict[str, dict] = {
         "unit":       "1 Platoon, A Coy",
         "soldier_id": "S-001",
         "call_sign":  "ALPHA-1",
+    },
+    "soldier2@rdf.mil": {
+        "password":   "soldier123",
+        "role":       "soldier",
+        "name":       "Pte. J. Habimana",
+        "unit":       "1 Platoon, A Coy",
+        "soldier_id": "S-002",
+        "call_sign":  "ALPHA-2",
+    },
+    "soldier3@rdf.mil": {
+        "password":   "soldier123",
+        "role":       "soldier",
+        "name":       "Pte. E. Niyonzima",
+        "unit":       "1 Platoon, A Coy",
+        "soldier_id": "S-003",
+        "call_sign":  "ALPHA-3",
+    },
+    "soldier4@rdf.mil": {
+        "password":   "soldier123",
+        "role":       "soldier",
+        "name":       "Cpl. R. Uwimana",
+        "unit":       "1 Platoon, A Coy",
+        "soldier_id": "S-004",
+        "call_sign":  "ALPHA-4",
     },
     "commander@rdf.mil": {
         "password":   "command3r!",
