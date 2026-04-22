@@ -400,7 +400,7 @@ function upsertMarker(state) {
     // Avoid GPS drift jitter, but still move if displacement is clearly real.
     const cur = markers[state.soldier_id].getLatLng();
     const movedMeters = haversine(cur.lat, cur.lng, latlng[0], latlng[1]);
-    const forceMoveOnLargeDisplacement = movedMeters >= 2.5;
+    const forceMoveOnLargeDisplacement = movedMeters >= 8.0;
     if (isMovingActivity(state.activity) || forceMoveOnLargeDisplacement) {
       markers[state.soldier_id].setLatLng(latlng);
     }

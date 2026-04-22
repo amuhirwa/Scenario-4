@@ -26,7 +26,7 @@ from typing import Union
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
 
-from inference import classifier, PRONE_ALERT_WINDOWS
+from inference import PRONE_ALERT_WINDOWS
 from models import (
     ForceStatus,
     GpsCoordinate,
@@ -63,11 +63,10 @@ commander_connections: list[WebSocket] = []
 # ─── Live LoRa ingestion state ───────────────────────────────────────────────
 LORA_WINDOW_SIZE = 128
 LORA_STRIDE = 1
-LORA_BOOTSTRAP_MIN_SAMPLES = 4
-LORA_STATUS_WINDOW = 24
-LORA_GPS_DEADBAND_M = 1.0
+LORA_BOOTSTRAP_MIN_SAMPLES = 8
+LORA_GPS_DEADBAND_M = 3.0
 LORA_SAMPLE_RATE_HZ = float(os.getenv("LORA_SAMPLE_RATE_HZ", "20.0"))
-LORA_CALIBRATION_SECONDS = 2
+LORA_CALIBRATION_SECONDS = 5
 LORA_CALIBRATION_SAMPLES = max(20, int(LORA_SAMPLE_RATE_HZ * LORA_CALIBRATION_SECONDS))
 lora_task: asyncio.Task | None = None
 lora_should_run: bool = False
@@ -129,7 +128,6 @@ def auto_detect_lora_port() -> str | None:
 # ─── Startup ──────────────────────────────────────────────────────────────────
 @app.on_event("startup")
 async def startup():
-    classifier.load()
     # Optional auto-start if serial port is provided via env.
     env_port = os.getenv("LORA_SERIAL_PORT", "").strip()
     env_baud = int(os.getenv("LORA_SERIAL_BAUD", "9600"))
@@ -246,6 +244,16 @@ def _parse_location(lat_s: str, lon_s: str, soldier_id: str) -> tuple[float, flo
     return lora_last_location.get(soldier_id, (0.0, 0.0))
 
 
+def _signal_quality(rssi: int) -> str:
+    if rssi >= -70:
+        return "EXCELLENT"
+    if rssi >= -85:
+        return "GOOD"
+    if rssi >= -100:
+        return "FAIR"
+    return "POOR"
+
+
 async def process_lora_sample(sample: dict[str, str]) -> None:
     """Buffer LoRa raw samples into 128 windows and push through soldier_report."""
     global lora_samples_seen, lora_windows_sent, lora_last_packet_at
@@ -353,6 +361,8 @@ async def process_lora_sample(sample: dict[str, str]) -> None:
                 "detected": True,
                 "temperature": temp_c,
                 "rssi": rssi,
+                "signal_quality": _signal_quality(rssi),
+                "calibrated": bool(cal["ready"]),
             })
         else:
             live_state = TacticalState(
@@ -368,7 +378,12 @@ async def process_lora_sample(sample: dict[str, str]) -> None:
                 alert_message=None,
                 temperature=temp_c,
                 rssi=rssi,
+                signal_quality=_signal_quality(rssi),
                 load="UNKNOWN",
+                speed_mps=0.0,
+                movement_m=0.0,
+                small_movement=False,
+                calibrated=bool(cal["ready"]),
             )
         soldier_state[sid] = live_state
         asyncio.create_task(
@@ -380,7 +395,14 @@ async def process_lora_sample(sample: dict[str, str]) -> None:
     else:
         existing = soldier_state.get(sid)
         if existing is not None:
-            hidden_state = existing.model_copy(update={"gps_valid": False, "detected": True, "temperature": temp_c, "rssi": rssi})
+            hidden_state = existing.model_copy(update={
+                "gps_valid": False,
+                "detected": True,
+                "temperature": temp_c,
+                "rssi": rssi,
+                "signal_quality": _signal_quality(rssi),
+                "calibrated": bool(cal["ready"]),
+            })
             soldier_state[sid] = hidden_state
             asyncio.create_task(
                 broadcast({
@@ -402,7 +424,12 @@ async def process_lora_sample(sample: dict[str, str]) -> None:
                 alert_message=None,
                 temperature=temp_c,
                 rssi=rssi,
+                signal_quality=_signal_quality(rssi),
                 load="UNKNOWN",
+                speed_mps=0.0,
+                movement_m=0.0,
+                small_movement=False,
+                calibrated=bool(cal["ready"]),
             )
             soldier_state[sid] = hidden_state
             asyncio.create_task(
@@ -609,11 +636,9 @@ async def soldier_report(window: SensorWindow):
     # Calculate magnitude and pitch from total acceleration for formula-based tactical state.
     # body_acc is gravity-removed and naturally too low for 1g threshold logic.
     import numpy as np
-    # Use only recent samples for status so labels react quickly to start/stop movement.
-    tail = min(LORA_STATUS_WINDOW, len(window.total_acc_x))
-    acc_x = np.array(window.total_acc_x[-tail:])
-    acc_y = np.array(window.total_acc_y[-tail:])
-    acc_z = np.array(window.total_acc_z[-tail:])
+    acc_x = np.array(window.total_acc_x)
+    acc_y = np.array(window.total_acc_y)
+    acc_z = np.array(window.total_acc_z)
     mag_series = np.sqrt(acc_x**2 + acc_y**2 + acc_z**2)
     mag = np.mean(mag_series)
     mag_std = np.std(mag_series)
@@ -638,9 +663,9 @@ async def soldier_report(window: SensorWindow):
     # Accelerometer pitch estimate
     acc_pitch_deg = float(np.degrees(np.mean(np.arctan2(-acc_x, np.sqrt(acc_y**2 + acc_z**2)))))
 
-    gyro_x = np.array(window.body_gyro_x[-tail:])
-    gyro_y = np.array(window.body_gyro_y[-tail:])
-    gyro_z = np.array(window.body_gyro_z[-tail:])
+    gyro_x = np.array(window.body_gyro_x)
+    gyro_y = np.array(window.body_gyro_y)
+    gyro_z = np.array(window.body_gyro_z)
     gyro_rms = np.sqrt(np.mean(gyro_x**2 + gyro_y**2 + gyro_z**2))
     # Remove DC bias so stationary sensor drift does not look like movement.
     gyro_dyn_x = gyro_x - np.mean(gyro_x)
@@ -724,11 +749,11 @@ async def soldier_report(window: SensorWindow):
         # Slow walking must show both accel variation and dynamic gyro motion.
         slow_walk_evidence = mag_std >= 0.11 and gyro_dyn_rms >= 3.0
         if slow_walk_evidence:
-            lora_slow_walk_score[sid] = min(lora_slow_walk_score[sid] + 2, 6)
+            lora_slow_walk_score[sid] = min(lora_slow_walk_score[sid] + 1, 6)
         else:
-            lora_slow_walk_score[sid] = max(lora_slow_walk_score[sid] - 2, 0)
+            lora_slow_walk_score[sid] = max(lora_slow_walk_score[sid] - 1, 0)
 
-        if lora_slow_walk_score[sid] >= 2:
+        if lora_slow_walk_score[sid] >= 3:
             activity = "WALKING"
             confidence = 0.7
         else:
@@ -753,16 +778,22 @@ async def soldier_report(window: SensorWindow):
             activity = "STATIONARY"
             confidence = min(confidence, 0.68)
 
-    # GPS/IMU consistency check (collaborative sanity for low-confidence outliers).
+    movement_m = 0.0
+    speed_mps = 0.0
+    small_movement = False
     if prev_state is not None and prev_state.gps_valid and window.location.latitude != 0.0 and window.location.longitude != 0.0:
         dt_s = (window.timestamp - prev_state.timestamp).total_seconds()
         if dt_s > 0.2:
-            speed_mps = _distance_m(
+            movement_m = _distance_m(
                 prev_state.location.latitude,
                 prev_state.location.longitude,
                 window.location.latitude,
                 window.location.longitude,
-            ) / dt_s
+            )
+            speed_mps = movement_m / dt_s
+            small_movement = 0.2 <= movement_m < 3.0
+
+            # GPS/IMU consistency check (collaborative sanity for low-confidence outliers).
             if activity == "RUNNING" and speed_mps < 1.5:
                 activity = "WALKING"
                 confidence = min(confidence, 0.75)
@@ -784,6 +815,7 @@ async def soldier_report(window: SensorWindow):
                 window.location.latitude,
                 window.location.longitude,
             )
+            movement_m = max(movement_m, moved_m)
             if moved_m > 1.2:
                 activity = "WALKING"
                 confidence = max(confidence, 0.68)
@@ -799,9 +831,9 @@ async def soldier_report(window: SensorWindow):
             confidence = min(confidence, 0.72)
 
         if activity != prev_act:
-            required = 1
+            required = 2
             if {prev_act, activity} in ({"PRONE_STILL", "RUNNING"}, {"CRAWLING", "RUNNING"}):
-                required = 2
+                required = 3
 
             if lora_transition_candidate[sid] == activity:
                 lora_transition_count[sid] += 1
@@ -831,23 +863,30 @@ async def soldier_report(window: SensorWindow):
     telemetry = lora_latest_telemetry.get(window.soldier_id, {})
     temperature = float(telemetry.get("temperature", 0.0))
     rssi = int(telemetry.get("rssi", -120))
+    signal_quality = _signal_quality(rssi)
+    calibrated = bool(lora_calibration[window.soldier_id]["ready"])
 
     alert, alert_msg = check_distress(window.soldier_id, activity)
 
     state = TacticalState(
-        soldier_id    = window.soldier_id,
-        timestamp     = window.timestamp,
-        location      = window.location,
-        gps_valid     = gps_valid,
-        detected      = True,
-        activity      = activity,
-        confidence    = confidence,
-        all_probs     = all_probs,
-        alert         = alert,
-        alert_message = alert_msg,
-        temperature   = temperature,
-        rssi          = rssi,
-        load          = load,
+        soldier_id=window.soldier_id,
+        timestamp=window.timestamp,
+        location=window.location,
+        gps_valid=gps_valid,
+        detected=True,
+        activity=activity,
+        confidence=confidence,
+        all_probs=all_probs,
+        alert=alert,
+        alert_message=alert_msg,
+        temperature=temperature,
+        rssi=rssi,
+        signal_quality=signal_quality,
+        load=load,
+        speed_mps=speed_mps,
+        movement_m=movement_m,
+        small_movement=small_movement,
+        calibrated=calibrated,
     )
     soldier_state[window.soldier_id]   = state
     soldier_history[window.soldier_id].append(state)

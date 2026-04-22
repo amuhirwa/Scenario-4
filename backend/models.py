@@ -41,19 +41,24 @@ class SensorWindow(BaseModel):
 
 class TacticalState(BaseModel):
     """Current classified state for one soldier."""
-    soldier_id:     str
-    timestamp:      datetime
-    location:       GpsCoordinate
-    gps_valid:      bool = True
-    detected:       bool = True
-    activity:       str          # WALKING | KNEELING_READY | PRONE_STILL | UNKNOWN
-    confidence:     float
-    all_probs:      dict[str, float]
-    alert:          bool = False  # True when PRONE_STILL > ALERT_THRESHOLD seconds
-    alert_message:  Optional[str] = None
-    temperature:    float = 0.0
-    rssi:           int = -120
-    load:           str = "UNKNOWN"  # LIGHT | HEAVY | UNKNOWN
+    soldier_id:      str
+    timestamp:       datetime
+    location:        GpsCoordinate
+    gps_valid:       bool = True
+    detected:        bool = True
+    activity:        str          # WALKING | KNEELING_READY | PRONE_STILL | UNKNOWN
+    confidence:      float
+    all_probs:       dict[str, float]
+    alert:           bool = False  # True when PRONE_STILL > ALERT_THRESHOLD seconds
+    alert_message:   Optional[str] = None
+    temperature:     float = 0.0
+    rssi:            int = -120
+    signal_quality:  str = "POOR"
+    load:            str = "UNKNOWN"  # LIGHT | HEAVY | UNKNOWN
+    speed_mps:       float = 0.0
+    movement_m:      float = 0.0
+    small_movement:  bool = False
+    calibrated:      bool = False
 
 
 class ForceStatus(BaseModel):
