@@ -57,9 +57,6 @@ class ApiService {
       'body_gyro_x': sensorChannels[3],
       'body_gyro_y': sensorChannels[4],
       'body_gyro_z': sensorChannels[5],
-      'total_acc_x': sensorChannels[6],
-      'total_acc_y': sensorChannels[7],
-      'total_acc_z': sensorChannels[8],
     };
 
     try {

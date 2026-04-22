@@ -1,0 +1,52 @@
+{
+  "model_path": "tactical_lstm_quantised.tflite",
+  "n_timesteps": 128,
+  "n_channels": 6,
+  "label_classes": [
+    "KNEELING_READY",
+    "PRONE_STILL",
+    "WALKING"
+  ],
+  "channel_names": [
+    "acc_x",
+    "acc_y",
+    "acc_z",
+    "gyro_x",
+    "gyro_y",
+    "gyro_z"
+  ],
+  "channel_sources": {
+    "acc_xyz": "userAcceleration (iOS CoreMotion) or body_acc (Android)",
+    "gyro_xyz": "rotationRate (iOS CoreMotion) or body_gyro (Android)"
+  },
+  "raw_mean": [
+    -0.0006363096181303263,
+    -0.0002923003921750933,
+    -0.00027529936050996184,
+    0.0005064766737632453,
+    -0.0008237484726123512,
+    0.00011294452997390181
+  ],
+  "raw_std": [
+    0.19478294253349304,
+    0.12235993891954422,
+    0.10680142045021057,
+    0.40664738416671753,
+    0.3816712498664856,
+    0.25563177466392517
+  ],
+  "sampling_rate_hz": 50,
+  "window_size_samples": 128,
+  "window_overlap": 0.5,
+  "training_datasets": [
+    "UCI HAR"
+  ],
+  "classes_in_training": [
+    "KNEELING_READY",
+    "PRONE_STILL",
+    "WALKING"
+  ],
+  "missing_classes": [
+    "CRAWLING"
+  ]
+}

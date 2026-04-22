@@ -3,11 +3,9 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:latlong2/latlong.dart';
 
 import '../models/soldier_status.dart';
 import '../services/api_service.dart';
-import '../services/inference_service.dart';
 import '../services/sensor_service.dart';
 
 // ─── Soldier identity ─────────────────────────────────────────────────────────
@@ -26,9 +24,6 @@ class SoldierNotifier extends StateNotifier<SoldierStatus?> {
   Future<void> start() async {
     if (_running) return;
     _running = true;
-
-    final inferenceService = InferenceService();
-    await inferenceService.init();
 
     final api = ApiService();
     // Register with backend — non-blocking, continues if server is unreachable
@@ -52,41 +47,19 @@ class SoldierNotifier extends StateNotifier<SoldierStatus?> {
       ),
     ).listen((pos) => _lastPosition = pos);
 
-    // Start sensors
+    // Start sensors — each window is sent to the backend for inference.
+    // If the server is unreachable the window is skipped and state holds the
+    // last known value until connectivity is restored.
     _sensorService = SensorService(
       onWindow: (channels) async {
-        // 1. On-device inference
-        final result = inferenceService.predict(channels);
-
-        // 2. Report to backend (async — non-blocking)
-        if (_lastPosition != null) {
-          final serverState = await api.sendSensorWindow(
-            soldierId: _ref.read(soldierIdProvider),
-            position: _lastPosition!,
-            sensorChannels: channels,
-          );
-          if (serverState != null) {
-            state = serverState;
-            return;
-          }
-        }
-
-        // 3. Fallback: use local inference result directly
-        if (_lastPosition != null) {
-          state = SoldierStatus(
-            soldierId: _ref.read(soldierIdProvider),
-            timestamp: DateTime.now().toUtc(),
-            location: LatLng(_lastPosition!.latitude, _lastPosition!.longitude),
-            altitude: _lastPosition!.altitude,
-            activity: result['activity'] as String,
-            confidence: result['confidence'] as double,
-            allProbs: Map<String, double>.from(
-              (result['allProbs'] as Map).map(
-                (k, v) => MapEntry(k as String, (v as num).toDouble()),
-              ),
-            ),
-            alert: false,
-          );
+        if (_lastPosition == null) return;
+        final serverState = await api.sendSensorWindow(
+          soldierId: _ref.read(soldierIdProvider),
+          position: _lastPosition!,
+          sensorChannels: channels,
+        );
+        if (serverState != null) {
+          state = serverState;
         }
       },
     );

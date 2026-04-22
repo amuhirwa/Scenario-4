@@ -7,7 +7,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'login_screen.dart';
+
 import '../models/soldier_status.dart';
+import '../providers/auth_provider.dart';
 import '../providers/commander_provider.dart';
 import '../widgets/activity_badge.dart';
 import '../widgets/force_status_drawer.dart';
@@ -27,11 +30,39 @@ class _CommanderMapScreenState extends ConsumerState<CommanderMapScreen> {
   static const double _defaultZoom = 14.5;
 
   SoldierStatus? _selected;
+  bool _mapFitted = false;
+
+  void _fitMapToSoldiers(Map<String, SoldierStatus> soldiers) {
+    if (soldiers.isEmpty) return;
+    final points = soldiers.values.map((s) => s.location).toList();
+    if (points.length == 1) {
+      _mapController.move(points.first, 16.0);
+      return;
+    }
+    final bounds = LatLngBounds.fromPoints(points);
+    _mapController.fitCamera(
+      CameraFit.bounds(
+        bounds: bounds,
+        padding: const EdgeInsets.all(80),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final soldiers = ref.watch(commanderProvider);
     final alertCount = ref.watch(alertCountProvider);
+
+    // Auto-fit on first data received from the WebSocket
+    ref.listen<Map<String, SoldierStatus>>(commanderProvider, (prev, next) {
+      if (!_mapFitted && next.isNotEmpty) {
+        _mapFitted = true;
+        // Defer until after the current build frame so MapController is ready
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _fitMapToSoldiers(next);
+        });
+      }
+    });
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -42,7 +73,7 @@ class _CommanderMapScreenState extends ConsumerState<CommanderMapScreen> {
             const Icon(Icons.radar, color: Color(0xFF4CAF50), size: 20),
             const SizedBox(width: 8),
             Text(
-              'COMMANDER MAP',
+              'MAP',
               style: GoogleFonts.inter(
                 fontSize: 14,
                 letterSpacing: 2,
@@ -93,9 +124,32 @@ class _CommanderMapScreenState extends ConsumerState<CommanderMapScreen> {
               onPressed: () => Scaffold.of(ctx).openEndDrawer(),
             ),
           ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, size: 20),
+            color: Colors.white38,
+            tooltip: 'Sign out',
+            onPressed: () {
+              ref.read(authProvider.notifier).logout();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (_) => false,
+              );
+            },
+          ),
         ],
       ),
       endDrawer: ForceStatusDrawer(soldiers: soldiers.values.toList()),
+
+      floatingActionButton: soldiers.isNotEmpty
+          ? FloatingActionButton.small(
+              backgroundColor: const Color(0xFF1E2A38),
+              foregroundColor: Colors.white70,
+              tooltip: 'Fit to soldiers',
+              onPressed: () => _fitMapToSoldiers(soldiers),
+              child: const Icon(Icons.center_focus_strong_rounded, size: 20),
+            )
+          : null,
 
       body: Stack(
         children: [

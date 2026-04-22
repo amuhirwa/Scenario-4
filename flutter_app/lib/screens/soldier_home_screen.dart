@@ -5,8 +5,11 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 
+import 'login_screen.dart';
+
 import '../models/soldier_status.dart';
 import '../models/app_config.dart';
+import '../providers/auth_provider.dart';
 import '../providers/soldier_provider.dart';
 import '../widgets/activity_badge.dart';
 
@@ -93,6 +96,19 @@ class _SoldierHomeScreenState extends ConsumerState<SoldierHomeScreen> {
                 ),
               ),
             ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, size: 20),
+            color: Colors.white38,
+            tooltip: 'Sign out',
+            onPressed: () {
+              ref.read(authProvider.notifier).logout();
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (_) => false,
+              );
+            },
           ),
         ],
       ),
