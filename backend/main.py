@@ -52,10 +52,10 @@ app.add_middleware(
 
 # ─── In-memory state ──────────────────────────────────────────────────────────
 # In a real system this would be Redis / a time-series DB
-soldier_state:     dict[str, TacticalState]        = {}     # latest state per soldier
-soldier_history:   dict[str, deque[TacticalState]] = defaultdict(lambda: deque(maxlen=200))
-prone_counters:    dict[str, int]                  = defaultdict(int)
-soldier_registry:  dict[str, SoldierRegistration]  = {}
+soldier_state:        dict[str, TacticalState]        = {}     # latest state per soldier
+soldier_history:      dict[str, deque[TacticalState]] = defaultdict(lambda: deque(maxlen=200))
+stationary_counters:  dict[str, int]                  = defaultdict(int)
+soldier_registry:     dict[str, SoldierRegistration]  = {}
 
 # WebSocket connection pool for commander dashboards
 commander_connections: list[WebSocket] = []
@@ -63,8 +63,8 @@ commander_connections: list[WebSocket] = []
 # ─── Live LoRa ingestion state ───────────────────────────────────────────────
 LORA_WINDOW_SIZE = 128
 LORA_STRIDE = 1
-LORA_BOOTSTRAP_MIN_SAMPLES = 4
-LORA_STATUS_WINDOW = 24
+LORA_BOOTSTRAP_MIN_SAMPLES = 2
+LORA_STATUS_WINDOW = 8
 LORA_GPS_DEADBAND_M = 1.0
 LORA_SAMPLE_RATE_HZ = float(os.getenv("LORA_SAMPLE_RATE_HZ", "20.0"))
 LORA_CALIBRATION_SECONDS = 2
@@ -77,7 +77,7 @@ lora_baud: int = 9600
 lora_last_packet_at: str | None = None
 lora_samples_seen: int = 0
 lora_windows_sent: int = 0
-lora_presence_timeout_s: float = 8.0
+lora_presence_timeout_s: float = 4.0
 lora_last_seen: dict[str, datetime] = {}
 lora_presence_task: asyncio.Task | None = None
 
@@ -131,7 +131,7 @@ def auto_detect_lora_port() -> str | None:
 async def startup():
     classifier.load()
     # Optional auto-start if serial port is provided via env.
-    env_port = os.getenv("LORA_SERIAL_PORT", "").strip()
+    env_port = os.getenv("LORA_SERIAL_PORT", "COM7").strip()
     env_baud = int(os.getenv("LORA_SERIAL_BAUD", "9600"))
     if env_port:
         await start_lora_ingest_worker(env_port, env_baud)
@@ -541,18 +541,33 @@ async def stop_lora_ingest_worker() -> dict:
     return {"running": False, "message": "LoRa ingest stopped"}
 
 
+# ─── Helper: human-readable duration ─────────────────────────────────────────
+def _format_duration(seconds: float) -> str:
+    s = int(seconds)
+    if s < 60:
+        return f"{s}s"
+    if s < 3600:
+        m, rem = divmod(s, 60)
+        return f"{m}m {rem}s"
+    if s < 86400:
+        h, rem = divmod(s, 3600)
+        m = rem // 60
+        return f"{h}h {m}m"
+    d, rem = divmod(s, 86400)
+    h = rem // 3600
+    return f"{d}d {h}h"
+
+
 # ─── Helper: detect distress ──────────────────────────────────────────────────
 def check_distress(soldier_id: str, activity: str) -> tuple[bool, Union[str, None]]:
-    if activity == "PRONE_STILL":
-        prone_counters[soldier_id] += 1
+    if activity == "STATIONARY":
+        stationary_counters[soldier_id] += 1
     else:
-        prone_counters[soldier_id] = 0
+        stationary_counters[soldier_id] = 0
 
-    if prone_counters[soldier_id] >= PRONE_ALERT_WINDOWS:
-        return True, (
-            f"⚠️  POSSIBLE DISTRESS — {soldier_id} has been "
-            f"PRONE_STILL for {prone_counters[soldier_id] * 0.64:.0f}s"
-        )
+    if stationary_counters[soldier_id] >= PRONE_ALERT_WINDOWS:
+        duration = _format_duration(stationary_counters[soldier_id] * 0.64)
+        return True, f"POSSIBLE DISTRESS — {soldier_id} has been STATIONARY for {duration}"
     return False, None
 
 
@@ -708,18 +723,6 @@ async def soldier_report(window: SensorWindow):
         activity = "WALKING"
         confidence = 0.9
         lora_slow_walk_score[sid] = min(lora_slow_walk_score[sid] + 2, 6)
-    elif 0.95 <= mag < 1.2 and abs(pitch) > 70:
-        activity = "CRAWLING"
-        confidence = 0.85
-        lora_slow_walk_score[sid] = max(lora_slow_walk_score[sid] - 1, 0)
-    elif 0.9 <= mag <= 1.1 and abs(pitch) > 75:
-        activity = "PRONE_STILL"
-        confidence = 0.8
-        lora_slow_walk_score[sid] = max(lora_slow_walk_score[sid] - 1, 0)
-    elif 0.9 <= mag <= 1.1 and 40 < abs(pitch) <= 70:
-        activity = "KNEELING_READY"
-        confidence = 0.75
-        lora_slow_walk_score[sid] = max(lora_slow_walk_score[sid] - 1, 0)
     elif 0.98 <= mag < 1.15 and abs(pitch) <= 50:
         # Slow walking must show both accel variation and dynamic gyro motion.
         slow_walk_evidence = mag_std >= 0.11 and gyro_dyn_rms >= 3.0
@@ -734,13 +737,9 @@ async def soldier_report(window: SensorWindow):
         else:
             activity = "STATIONARY"
             confidence = 0.82
-    elif mag < 1.15 and abs(pitch) <= 40:
-        activity = "STATIONARY"
-        confidence = 0.8
-        lora_slow_walk_score[sid] = max(lora_slow_walk_score[sid] - 1, 0)
     else:
         activity = "STATIONARY"
-        confidence = 0.6
+        confidence = 0.75
         lora_slow_walk_score[sid] = max(lora_slow_walk_score[sid] - 1, 0)
 
     # FFT cadence sanity-check for locomotion labels.
@@ -791,17 +790,10 @@ async def soldier_report(window: SensorWindow):
     # Transition matrix style smoothing for implausible jumps.
     if prev_state is not None:
         prev_act = prev_state.activity
-        if prev_act == "PRONE_STILL" and activity == "RUNNING":
-            activity = "KNEELING_READY"
-            confidence = min(confidence, 0.72)
-        elif prev_act == "RUNNING" and activity == "PRONE_STILL":
-            activity = "WALKING"
-            confidence = min(confidence, 0.72)
 
         if activity != prev_act:
-            required = 1
-            if {prev_act, activity} in ({"PRONE_STILL", "RUNNING"}, {"CRAWLING", "RUNNING"}):
-                required = 2
+            # Require 2 consecutive windows for STATIONARY↔RUNNING transitions.
+            required = 2 if {prev_act, activity} == {"STATIONARY", "RUNNING"} else 1
 
             if lora_transition_candidate[sid] == activity:
                 lora_transition_count[sid] += 1

@@ -3,84 +3,68 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Commander's Associate — RDF Dismounted Dashboard</title>
+    <title>CMDR.ASSOCIATE // RDF DISMOUNTED SA</title>
 
-    <!-- Fonts -->
+    <!-- Fonts: Rajdhani (UI) + JetBrains Mono (data) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Rajdhani:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
 
     <!-- Leaflet -->
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <!-- ── Header ──────────────────────────────────────────────────────────────── -->
+    <!-- ── Header ──────────────────────────────────────────────────────────── -->
     <header>
       <div>
-        <div class="logo">⚔ COMMANDER'S ASSOCIATE</div>
-        <div class="sub">
-          DISMOUNTED SITUATIONAL AWARENESS · RDF R&amp;D PROTOTYPE v0.1
-        </div>
+        <div class="logo">CMDR.ASSOCIATE</div>
+        <div class="sub">DISMOUNTED SITUATIONAL AWARENESS &nbsp;|&nbsp; RDF R&amp;D PROTOTYPE v0.1</div>
       </div>
       <div class="spacer"></div>
       <div id="soldier-count">0 SOLDIERS TRACKED</div>
       <div id="conn-status" class="status-pill connecting">
         <div class="dot"></div>
-        <span class="conn-text">CONNECTING…</span>
+        <span class="conn-text">CONNECTING</span>
       </div>
     </header>
 
-    <!-- ── Main ────────────────────────────────────────────────────────────────── -->
+    <!-- ── Main ────────────────────────────────────────────────────────────── -->
     <main>
-      <!-- ── Map pane ─────────────────────────────────────────────────────────── -->
+      <!-- ── Map pane ─────────────────────────────────────────────────────── -->
       <div id="map">
-        <!-- Legend overlay (populated by JS) -->
         <div id="legend"></div>
+        <button id="layer-toggle-btn" class="map-layer-btn active" onclick="toggleMapLayer()">MAP VIEW</button>
       </div>
 
-      <!-- ── Sidebar ──────────────────────────────────────────────────────────── -->
+      <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
       <aside id="sidebar">
-        <!-- Selected soldier details -->
+        <!-- Selected soldier -->
         <div id="selected-section">
-          <div class="sidebar-header">📍&nbsp;&nbsp;SELECTED SOLDIER</div>
+          <div class="sidebar-header">TARGET UNIT</div>
           <div id="selected-soldier">
-            <div style="padding:20px;text-align:center;color:#8b949e;font-size:0.78rem;">
-              Click a soldier marker or card to view details.
-            </div>
+            <div style="padding:18px;text-align:center;color:var(--text-dim);font-size:.68rem;letter-spacing:1px;">SELECT A UNIT TO VIEW DETAILS</div>
           </div>
         </div>
 
-        <!-- Alerts section -->
+        <!-- Alerts -->
         <div id="alerts-section">
-          <div class="sidebar-header">⚠️&nbsp;&nbsp;ACTIVE ALERTS</div>
+          <div class="sidebar-header" style="color:var(--red)">ACTIVE ALERTS</div>
           <div id="alerts-container">
-            <div id="no-alerts">No active alerts</div>
+            <div id="no-alerts">NO ACTIVE ALERTS</div>
           </div>
         </div>
 
-        <!-- Force list section -->
+        <!-- Force list -->
         <div id="force-list-section">
-          <div class="sidebar-header">🪖&nbsp;&nbsp;FORCE PICTURE</div>
+          <div class="sidebar-header">FORCE PICTURE</div>
           <div id="soldier-list">
-            <div
-              style="
-                padding: 20px;
-                text-align: center;
-                color: #8b949e;
-                font-size: 0.78rem;
-              "
-            >
-              Waiting for soldier data…
-            </div>
+            <div style="padding:18px;text-align:center;color:var(--text-dim);font-size:.68rem;letter-spacing:1px;">AWAITING SENSOR DATA</div>
           </div>
         </div>
       </aside>

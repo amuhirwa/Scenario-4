@@ -29,8 +29,8 @@ METADATA_PATH = os.path.join(
 )
 
 # ─── Distress detection ───────────────────────────────────────────────────────
-# If a soldier has been PRONE_STILL for this many consecutive windows, raise alert
-PRONE_ALERT_WINDOWS = 10     # 10 × 0.64 s ≈ 6.4 seconds of no movement
+# If a soldier has been STATIONARY for this many consecutive windows, raise alert
+PRONE_ALERT_WINDOWS = 20     # 20 × 0.64 s ≈ 12.8 seconds of immobility
 
 
 class TacticalClassifier:

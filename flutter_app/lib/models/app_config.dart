@@ -17,9 +17,9 @@ class AppConfig {
   // Sensor collection
   static const int samplingHz = 50; // 50 Hz target
   static const int windowSamples = 128;
-  static const double windowOverlap = 0.5; // 50% overlap
-  static const int stepSamples = 64; // samples before new inference
+  static const double windowOverlap = 0.75; // 75% overlap → 0.64s update interval
+  static const int stepSamples = 32; // samples before new inference (halved for faster updates)
 
-  // Distress threshold (consecutive PRONE_STILL windows before alert)
-  static const int proneAlertWindows = 10;
+  // Distress threshold (consecutive STATIONARY windows before alert)
+  static const int proneAlertWindows = 20;
 }
