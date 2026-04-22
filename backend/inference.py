@@ -72,6 +72,7 @@ class TacticalClassifier:
         Order: body_acc_xyz, body_gyro_xyz, total_acc_xyz
         Returns: {'activity': str, 'confidence': float, 'all_probs': dict}
         """
+        print(sensor_channels)
         window = np.array(sensor_channels, dtype=np.float32).T   # (128, 9)
         window = (window - self.raw_mean[0]) / self.raw_std[0]
         inp    = window[np.newaxis, :, :]                         # (1, 128, 9)

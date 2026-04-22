@@ -44,11 +44,16 @@ class TacticalState(BaseModel):
     soldier_id:     str
     timestamp:      datetime
     location:       GpsCoordinate
+    gps_valid:      bool = True
+    detected:       bool = True
     activity:       str          # WALKING | KNEELING_READY | PRONE_STILL | UNKNOWN
     confidence:     float
     all_probs:      dict[str, float]
     alert:          bool = False  # True when PRONE_STILL > ALERT_THRESHOLD seconds
     alert_message:  Optional[str] = None
+    temperature:    float = 0.0
+    rssi:           int = -120
+    load:           str = "UNKNOWN"  # LIGHT | HEAVY | UNKNOWN
 
 
 class ForceStatus(BaseModel):
