@@ -365,17 +365,19 @@ function upsertMarker(state) {
   const latlng = [state.location.latitude, state.location.longitude];
   if (markers[state.soldier_id]) {
     const cur = markers[state.soldier_id].getLatLng();
-    if (isMovingActivity(state.activity) || haversine(cur.lat, cur.lng, latlng[0], latlng[1]) >= 2.5)
+    if (isMovingActivity(state.activity) || haversine(cur.lat, cur.lng, latlng[0], latlng[1]) >= 1.2)
       markers[state.soldier_id].setLatLng(latlng);
     markers[state.soldier_id].setIcon(buildMarkerIcon(state));
   } else {
     const m = L.marker(latlng, { icon: buildMarkerIcon(state) }).addTo(map);
     m.bindPopup(() => buildPopupContent(soldiers[state.soldier_id]), { maxWidth: 360, autoPan: true });
     m.on("click", () => {
-      // Update sidebar only — bindPopup handles opening the popup on single click
       selectedId = state.soldier_id;
       renderSelectedSoldier();
       renderSoldierList();
+      // Zoom in if not already close enough
+      if (map.getZoom() < 17)
+        runMapMove(() => map.flyTo(latlng, 17, { animate: true, duration: 0.8 }));
     });
     markers[state.soldier_id] = m;
     if (!autoFocusDone) {
@@ -490,8 +492,10 @@ function renderSoldierList() {
 function panToSoldier(id) {
   const s = soldiers[id];
   if (!s) return;
-  map.panTo([s.location.latitude, s.location.longitude], { animate: true });
-  if (markers[id]) markers[id].openPopup();
+  const targetZoom = Math.max(map.getZoom(), 17);
+  runMapMove(() => map.flyTo([s.location.latitude, s.location.longitude], targetZoom, { animate: true, duration: 0.8 }));
+  // Open popup after fly animation settles
+  setTimeout(() => { if (markers[id]) markers[id].openPopup(); }, 850);
 }
 
 function selectSoldier(id, openPopup = false) {
